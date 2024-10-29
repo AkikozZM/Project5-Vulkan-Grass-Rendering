@@ -46,9 +46,10 @@ bool inBounds(float value, float bounds) {
 // Culling based on dist and view frustum
 bool inFrustum(vec4 position) {
     vec4 clipPos = camera.proj * camera.view * position;
-    return inBounds(clipPos.x / clipPos.w, 1.0) &&
-           inBounds(clipPos.y / clipPos.w, 1.0) &&
-           inBounds(clipPos.z / clipPos.w, 1.0);
+    float a = 1.1;
+    return inBounds(clipPos.x / clipPos.w, a) &&
+           inBounds(clipPos.y / clipPos.w, a) &&
+           inBounds(clipPos.z / clipPos.w, a);
 }
 
 vec3 getWindDirection(vec3 position) {
@@ -136,7 +137,7 @@ void main() {
     vec4 pV0 = vec4(v0, 1.0);
     vec4 pV2 = vec4(v2, 1.0);
     vec4 pM = vec4(0.25 * v0 + 0.5 * v1 + 0.25 * v2, 1.0);
-    if (!inFrustum(pV0) && !inFrustum(pV2) && !inFrustum(pM)) {
+    if (!inFrustum(pV0) || !inFrustum(pV2) || !inFrustum(pM)) {
         return;
     }
 
