@@ -15,7 +15,7 @@ layout(set = 0, binding = 0) uniform CameraBufferObject {
 layout(set = 1, binding = 0) uniform Time {
     float deltaTime;
     float totalTime;
-};
+} time;
 
 struct Blade {
     vec4 v0;
@@ -24,7 +24,7 @@ struct Blade {
     vec4 up;
 };
 
-layout(set = 2. binding = 0) buffer BladeInputBuffer {
+layout(set = 2, binding = 0) buffer BladeInputBuffer {
     Blade blades[];
 } bladeInputBuffer;
 
@@ -52,17 +52,20 @@ bool inFrustum(vec4 position) {
 }
 
 vec3 getWindDirection(vec3 position) {
-    float i_Time = time.deltaTime;
-    float windStrengthX = 0.5;
-    float windStrengthZ = 0.3;
+    float i_Time = time.totalTime;
+    float windStrengthX = 0.0;
+    float windStrengthZ = 5.0;
     float windStrengthY = 0.1;
-    float freqX = 0.1;
-    float freqZ = 0.07;
+    float freqX = 1.0;
+    float freqZ = 1.0;
+    float scale = 1.5;
 
-    float windX = windStrengthX * sin(freqX * position.z + i_Time * 0.5);
-    float windZ = windStrengthZ * cos(freqZ * position.x + i_Time * 0.3);
+    float windX = windStrengthX * sin(freqX * position.z + i_Time * scale);
+    float windZ = windStrengthZ * cos(freqZ * position.x + i_Time * scale);
     float windY = windStrengthY * sin(i_Time * 0.2);
 
+    //debug
+    return vec3(windX, windY, windZ);
     return vec3(windX, windY, windZ);
 
 }
@@ -88,10 +91,10 @@ void main() {
     // Apply forces on every blade and update the vertices in the buffer
     // Gravity
     vec3 D_xyz = vec3(D_GRAVITY.xyz);
-    vec3 D_w = D_GRAVITY.w;
+    float D_w = D_GRAVITY.w;
     vec3 gE = normalize(D_xyz) * D_w;
     vec3 f = cross(up, vec3(cos(orientation), 0.0, sin(orientation)));
-    vec3 gF = (1/4) * length(gE) * f; // front gravity
+    vec3 gF = (0.25) * length(gE) * f; // front gravity
     vec3 G = gE + gF; // total gravity
 
     // Recovery
@@ -109,7 +112,7 @@ void main() {
 
     // validation
     tv2 = tv2 - up * min(up * (tv2 - v1), 0);
-    float lproj = length(tv2 - v0 - up * (dot(tv2 - v0), up));
+    float lproj = length(tv2 - v0 - up * dot((tv2 - v0), up));
     v1 = v0 + height * up * max(1.0 - lproj / height, 0.05 * max(lproj / height, 1.0));
     v2 = tv2;
     float l = (length(v0 - v2) + 2 * (length(v0 - v1) + length(v1 - v2))) / 3;
@@ -143,9 +146,9 @@ void main() {
     vec3 CameraLeft = cross(CameraUp, CameraPos);
     vec3 CameraFront = normalize(cross(CameraLeft, CameraUp));
     float dproj = dot(CameraFront, CameraPos);
-    float dist_cull_level = 10;
-    float dist_cull_max = 20;
-    if ((gl_GlobalInvocationID.x % dist_cull_level) > floor(dist_cull_level * (1 - dproj / dist_cull_max))) {
+    int dist_cull_level = 10;
+    int dist_cull_max = 20;
+    if ((gl_GlobalInvocationID.x % dist_cull_level) > floor(dist_cull_level * (1.0 - dproj / dist_cull_max))) {
         return;
     }
 
